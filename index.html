@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Warehouse Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-blue-600">MultiWare</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="flex items-center space-x-4">
+                        <button onclick="showTab('upload')" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600">Upload</button>
+                        <button onclick="showTab('results')" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600">Results</button>
+                        <button onclick="showTab('admin')" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600">Admin</button>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="text-gray-700">
+                        <i class="bi bi-list text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <button onclick="showTab('upload')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 w-full text-left">Upload</button>
+                <button onclick="showTab('results')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 w-full text-left">Results</button>
+                <button onclick="showTab('admin')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 w-full text-left">Admin</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Upload Page -->
+    <div id="uploadTab" class="max-w-2xl mx-auto mt-10 p-6">
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">Upload Files</h2>
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700">Sales Dump</label>
+                    <input type="file" accept=".xlsx,.csv" class="w-full p-2 border border-gray-300 rounded-xl">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700">Order Dump</label>
+                    <input type="file" accept=".xlsx,.csv" class="w-full p-2 border border-gray-300 rounded-xl">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700">Allocation Dump</label>
+                    <input type="file" accept=".xlsx,.csv" class="w-full p-2 border border-gray-300 rounded-xl">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700">Backorder Dump</label>
+                    <input type="file" accept=".xlsx,.csv" class="w-full p-2 border border-gray-300 rounded-xl">
+                </div>
+                <button onclick="processFiles()" class="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition">Process Files</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Page -->
+    <div id="resultsTab" class="max-w-7xl mx-auto mt-10 p-6 hidden">
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-4">
+                    <button class="flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                        <i class="bi bi-funnel"></i>
+                        <span>Filter</span>
+                    </button>
+                </div>
+                <div class="flex space-x-4">
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Export Excel</button>
+                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Export PDF</button>
+                </div>
+            </div>
+            <div id="resultsGrid" class="ag-theme-alpine w-full h-[600px]"></div>
+        </div>
+    </div>
+
+    <!-- Admin Page -->
+    <div id="adminTab" class="max-w-7xl mx-auto mt-10 p-6 hidden">
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Rules List -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">Existing Rules</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conditions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rulesList" class="bg-white divide-y divide-gray-200">
+                            <!-- Rules will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Rule Builder -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">Rule Builder</h3>
+                <form id="ruleForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Rule Name</label>
+                        <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Conditions</label>
+                        <div id="conditionsContainer" class="space-y-2">
+                            <div class="flex space-x-2">
+                                <select class="rounded-md border-gray-300">
+                                    <option>Field</option>
+                                </select>
+                                <select class="rounded-md border-gray-300">
+                                    <option>Operator</option>
+                                </select>
+                                <input type="text" class="rounded-md border-gray-300" placeholder="Value">
+                            </div>
+                        </div>
+                        <button type="button" onclick="addCondition()" class="mt-2 px-4 py-2 text-sm bg-gray-100 rounded-md hover:bg-gray-200">Add Condition</button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Formula Type</label>
+                        <div class="mt-2 space-y-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="formulaType" value="tiered" class="form-radio">
+                                <span class="ml-2">Tiered %</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="formulaType" value="flat" class="form-radio">
+                                <span class="ml-2">Flat Amount</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="formulaType" value="custom" class="form-radio">
+                                <span class="ml-2">Custom Script</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Priority</label>
+                        <input type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="block text-sm font-medium text-gray-700 mr-2">Active</label>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                            <input type="checkbox" name="active" id="active" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label for="active" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Save Rule</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Navigation
+        function showTab(tabName) {
+            document.getElementById('uploadTab').classList.add('hidden');
+            document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('adminTab').classList.add('hidden');
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Initialize AG-Grid
+        document.addEventListener('DOMContentLoaded', function() {
+            const gridOptions = {
+                columnDefs: [
+                    { field: "dealerCode", headerName: "Dealer Code" },
+                    { field: "salesValue", headerName: "Sales Value" },
+                    { field: "orderQty", headerName: "Order Qty" },
+                    { field: "allocQty", headerName: "Alloc Qty" },
+                    { field: "backorderQty", headerName: "Backorder Qty" },
+                    { field: "incentive", headerName: "Incentive" },
+                    { field: "breakdown", headerName: "Breakdown" }
+                ],
+                defaultColDef: {
+                    flex: 1,
+                    minWidth: 100,
+                    sortable: true,
+                    filter: true,
+                    resizable: true
+                },
+                rowData: []
+            };
+
+            const gridDiv = document.querySelector('#resultsGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+        });
+
+        // File Processing
+        function processFiles() {
+            // Add file processing logic here
+            alert('Processing files...');
+        }
+
+        // Rule Builder
+        function addCondition() {
+            const container = document.getElementById('conditionsContainer');
+            const newCondition = document.createElement('div');
+            newCondition.className = 'flex space-x-2';
+            newCondition.innerHTML = `
+                <select class="rounded-md border-gray-300">
+                    <option>Field</option>
+                </select>
+                <select class="rounded-md border-gray-300">
+                    <option>Operator</option>
+                </select>
+                <input type="text" class="rounded-md border-gray-300" placeholder="Value">
+            `;
+            container.appendChild(newCondition);
+        }
+    </script>
+
+    <style>
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #2563eb;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #2563eb;
+        }
+    </style>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
